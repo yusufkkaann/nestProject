@@ -62,7 +62,10 @@ export class AuthService {
     const user = await this.users.findByEmailWithPassword(dto.email);
 
     // Kullanici yoksa bile dogrulama yapilir (timing attack korumasi)
-    const passwordMatches = await this.verifyPassword(user?.passwordHash ?? DUMMY_HASH, dto.password);
+    const passwordMatches = await this.verifyPassword(
+      user?.passwordHash ?? DUMMY_HASH,
+      dto.password,
+    );
 
     if (!user || !passwordMatches) {
       throw new UnauthorizedException('E-posta veya parola hatali');
@@ -86,7 +89,9 @@ export class AuthService {
     if (!this.hashMatches(refreshToken, user.refreshTokenHash)) {
       // Kullanilmis/eski bir token geldi -> token calinmis olabilir, tum oturumu kapat
       await this.users.setRefreshTokenHash(user._id, null);
-      throw new UnauthorizedException('Refresh token gecersiz, oturum sonlandirildi');
+      throw new UnauthorizedException(
+        'Refresh token gecersiz, oturum sonlandirildi',
+      );
     }
 
     return this.issueTokens(user);
@@ -98,7 +103,9 @@ export class AuthService {
         secret: this.config.getOrThrow<string>('jwt.refreshSecret'),
       });
     } catch {
-      throw new UnauthorizedException('Gecersiz veya suresi dolmus refresh token');
+      throw new UnauthorizedException(
+        'Gecersiz veya suresi dolmus refresh token',
+      );
     }
   }
 
@@ -112,11 +119,13 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: this.config.getOrThrow<string>('jwt.accessSecret'),
-        expiresIn: this.config.getOrThrow<JwtSignOptions['expiresIn']>('jwt.accessTtl'),
+        expiresIn:
+          this.config.getOrThrow<JwtSignOptions['expiresIn']>('jwt.accessTtl'),
       }),
       this.jwt.signAsync(payload, {
         secret: this.config.getOrThrow<string>('jwt.refreshSecret'),
-        expiresIn: this.config.getOrThrow<JwtSignOptions['expiresIn']>('jwt.refreshTtl'),
+        expiresIn:
+          this.config.getOrThrow<JwtSignOptions['expiresIn']>('jwt.refreshTtl'),
       }),
     ]);
 
@@ -152,6 +161,8 @@ export class AuthService {
   private hashMatches(token: string, storedHash: string): boolean {
     const incoming = Buffer.from(this.sha256(token));
     const stored = Buffer.from(storedHash);
-    return incoming.length === stored.length && timingSafeEqual(incoming, stored);
+    return (
+      incoming.length === stored.length && timingSafeEqual(incoming, stored)
+    );
   }
 }

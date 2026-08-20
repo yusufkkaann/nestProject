@@ -5,9 +5,11 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { configuration } from './config/configuration';
+import { createMongooseOptions } from './config/database.config';
 import { validateEnv } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { MediaModule } from './modules/media/media.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -23,14 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     // Mongo baglantisi config uzerinden async kurulur
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.getOrThrow<string>('mongoUri'),
-        // Atlas'a acilan havuz: cok fazla baglanti acmadan es zamanli istekleri karsilar
-        maxPoolSize: 10,
-        minPoolSize: 1,
-        serverSelectionTimeoutMS: 5000,
-        autoIndex: config.get<string>('nodeEnv') !== 'production',
-      }),
+      useFactory: createMongooseOptions,
     }),
 
     // Brute-force korumasi: IP basina 60 saniyede 100 istek
@@ -39,6 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule, // health modulu eklendi
     AuthModule, // register / login / refresh
     UsersModule, // /users/me
+    MediaModule, // yukleme, indirme, yetkilendirme
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -1,5 +1,13 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsString, Min, MinLength, validateSync } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Min,
+  MinLength,
+  validateSync,
+} from 'class-validator';
 
 export enum NodeEnv {
   Development = 'development',
@@ -45,7 +53,9 @@ class EnvironmentVariables {
  * Uygulama ayaga kalkarken .env dogrulanir.
  * Eksik/hatali degisken varsa surec baslamadan hata verir (fail fast).
  */
-export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
+export function validateEnv(
+  config: Record<string, unknown>,
+): EnvironmentVariables {
   const validated = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
@@ -55,7 +65,10 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
 
   if (errors.length > 0) {
     const details = errors
-      .map((e) => `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`)
+      .map(
+        (e) =>
+          `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`,
+      )
       .join('\n');
     throw new Error(`Gecersiz ortam degiskenleri:\n${details}`);
   }

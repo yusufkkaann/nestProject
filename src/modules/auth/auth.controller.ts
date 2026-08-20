@@ -27,7 +27,11 @@ import type { Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthService, IssuedTokens } from './auth.service';
-import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from './auth.cookies';
+import {
+  clearAuthCookies,
+  REFRESH_COOKIE,
+  setAuthCookies,
+} from './auth.cookies';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -46,9 +50,13 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Yeni kullanici olusturur (token dondurmez, ayrica login gerekir)' })
+  @ApiOperation({
+    summary: 'Yeni kullanici olusturur (token dondurmez, ayrica login gerekir)',
+  })
   @ApiCreatedResponse({ type: RegisterResponseDto })
-  @ApiBadRequestResponse({ description: 'Dogrulama hatasi (gecersiz e-posta veya zayif parola)' })
+  @ApiBadRequestResponse({
+    description: 'Dogrulama hatasi (gecersiz e-posta veya zayif parola)',
+  })
   @ApiConflictResponse({ description: 'E-posta zaten kayitli' })
   @ApiTooManyRequestsResponse({ description: 'Cok fazla istek' })
   register(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
@@ -59,7 +67,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
-    summary: 'Kimlik dogrular; token cifti hem httpOnly cookie olarak hem govdede doner',
+    summary:
+      'Kimlik dogrular; token cifti hem httpOnly cookie olarak hem govdede doner',
   })
   @ApiOkResponse({ type: TokensDto })
   @ApiBadRequestResponse({ description: 'Dogrulama hatasi' })
@@ -75,17 +84,22 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh token ile yeni token cifti uretir (rotation)' })
+  @ApiOperation({
+    summary: 'Refresh token ile yeni token cifti uretir (rotation)',
+  })
   @ApiOkResponse({ type: TokensDto })
   @ApiBadRequestResponse({ description: 'Token formati gecersiz' })
-  @ApiUnauthorizedResponse({ description: 'Gecersiz, suresi dolmus veya kullanilmis refresh token' })
+  @ApiUnauthorizedResponse({
+    description: 'Gecersiz, suresi dolmus veya kullanilmis refresh token',
+  })
   async refresh(
     @Body() dto: RefreshDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<TokensDto> {
     // Once govde, sonra cookie: hem API istemcileri hem tarayici desteklenir
-    const token = dto.refreshToken ?? (req.cookies?.[REFRESH_COOKIE] as string | undefined);
+    const token =
+      dto.refreshToken ?? (req.cookies?.[REFRESH_COOKIE] as string | undefined);
     if (!token) {
       throw new UnauthorizedException('Refresh token bulunamadi');
     }
@@ -98,7 +112,9 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Oturumu kapatir: refresh token gecersizlesir, cookieler silinir' })
+  @ApiOperation({
+    summary: 'Oturumu kapatir: refresh token gecersizlesir, cookieler silinir',
+  })
   @ApiNoContentResponse({ description: 'Cikis yapildi' })
   @ApiUnauthorizedResponse({ description: 'Token eksik veya gecersiz' })
   async logout(
@@ -111,7 +127,10 @@ export class AuthController {
 
   private respondWithTokens(res: Response, tokens: IssuedTokens): TokensDto {
     setAuthCookies(res, tokens, tokens, this.isProduction);
-    return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
   private get isProduction(): boolean {

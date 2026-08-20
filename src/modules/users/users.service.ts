@@ -6,16 +6,28 @@ import { User, UserDocument } from './schemas/user.schema';
 
 const MONGO_DUPLICATE_KEY = 11000;
 
+/** Mongo surucusunun firlattigi hatalarda code alani her zaman bulunmaz */
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === MONGO_DUPLICATE_KEY
+  );
+}
+
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+  ) {}
 
   async create(email: string, passwordHash: string): Promise<UserDocument> {
     try {
       return await this.userModel.create({ email, passwordHash });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Unique index ihlali: ayni anda iki kayit denemesinde de dogru sonucu verir
-      if (error?.code === MONGO_DUPLICATE_KEY) {
+      if (isDuplicateKeyError(error)) {
         throw new ConflictException('Bu e-posta adresi zaten kayitli');
       }
       throw error;
@@ -28,7 +40,10 @@ export class UsersService {
 
   /** Login icin: passwordHash varsayilan olarak gelmedigi icin acikca isteniyor */
   findByEmailWithPassword(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email: email.toLowerCase() }).select('+passwordHash').exec();
+    return this.userModel
+      .findOne({ email: email.toLowerCase() })
+      .select('+passwordHash')
+      .exec();
   }
 
   /** Refresh icin: saklanan token hash'i acikca isteniyor */
@@ -36,13 +51,21 @@ export class UsersService {
     return this.userModel.findById(id).select('+refreshTokenHash').exec();
   }
 
-  async setRefreshTokenHash(id: string | Types.ObjectId, hash: string | null): Promise<void> {
-    await this.userModel.updateOne({ _id: id }, { refreshTokenHash: hash }).exec();
+  async setRefreshTokenHash(
+    id: string | Types.ObjectId,
+    hash: string | null,
+  ): Promise<void> {
+    await this.userModel
+      .updateOne({ _id: id }, { refreshTokenHash: hash })
+      .exec();
   }
 
   /** Yetki verilecek kullanicinin varligini dogrulamak icin (Media modulu kullanacak) */
   async existsById(id: string | Types.ObjectId): Promise<boolean> {
-    const count = await this.userModel.countDocuments({ _id: id }).limit(1).exec();
+    const count = await this.userModel
+      .countDocuments({ _id: id })
+      .limit(1)
+      .exec();
     return count > 0;
   }
 }
