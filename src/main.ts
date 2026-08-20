@@ -24,7 +24,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Media Library API')
-    .setDescription('JWT kimlik dogrulama ve kaynak bazli yetkilendirme iceren medya yonetim servisi')
+    .setDescription(
+      'JWT kimlik dogrulama ve kaynak bazli yetkilendirme iceren medya yonetim servisi',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
@@ -34,7 +36,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document, {
-    swaggerOptions: { persistAuthorization: true },
+    swaggerOptions: { persistAuthorization: true }, //swagger sayfasinda login olduktan sonra tokeni hatirla
   });
 
   const port = config.get<number>('port') ?? 3000;

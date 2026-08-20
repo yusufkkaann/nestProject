@@ -34,7 +34,7 @@ import { HealthModule } from './modules/health/health.module';
     // Brute-force korumasi: IP basina 60 saniyede 100 istek
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 
-    HealthModule,
+    HealthModule, // health modulu eklendi
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
