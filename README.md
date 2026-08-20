@@ -199,6 +199,8 @@ src/
 
 `passwordHash`, `refreshTokenHash` ve `filePath` alanları şema seviyesindeki `toJSON` dönüşümüyle API cevaplarından temizlenir.
 
+`allowedUserIds` alanı `GET /media/:id` cevabında **yalnızca dosya sahibine ve admine** döner. İzinli bir kullanıcı dosyayı görüntüleyebilir ancak dosyanın başka kimlerle paylaşıldığını göremez — aksi hâlde `GET /media/:id/permissions` ucuna konan sahip kısıtı yan kapıdan aşılmış olurdu.
+
 ---
 
 ## Kimlik Doğrulama
@@ -391,15 +393,20 @@ Tüm uçlar kimlik doğrulama gerektirir.
 | Metot | Yol | Erişim | Başarı | Olası hatalar |
 |---|---|---|---|---|
 | POST | `/media/upload` 🔒 | — | 201 | 400, 401, 413, 415, 422 |
-| GET | `/media/my` 🔒 | Kendi dosyaları | 200 | 401 |
-| GET | `/media/my/paginated` 🔒 | Kendi dosyaları (sayfalı) | 200 | 400, 401 |
+| GET | `/media/my` 🔒 | Kendi dosyaları | 200 | 400, 401 |
 | GET | `/media/:id` 🔒 | Sahibi, izinli veya admin | 200 | 400, 401, 403, 404 |
 | GET | `/media/:id/download` 🔒 | Sahibi, izinli veya admin | 200 | 400, 401, 403, 404 |
 | DELETE | `/media/:id` 🔒 | Sahibi veya admin | 204 | 400, 401, 403, 404 |
 | GET | `/media/:id/permissions` 🔒 | Sahibi veya admin | 200 | 400, 401, 403, 404 |
 | POST | `/media/:id/permissions` 🔒 | Sahibi veya admin | 200 | 400, 401, 403, 404 |
 
-`GET /media/my/paginated` sorgu parametreleri: `page` (varsayılan 1), `limit` (varsayılan 20, en fazla 100).
+`GET /media/my` sorgu parametreleri **opsiyoneldir**: `page` (varsayılan `1`), `limit` (varsayılan `20`, en fazla `100`).
+
+Cevap her zaman aynı zarf yapısındadır — parametre verilip verilmemesi gövdenin şeklini değiştirmez:
+
+```json
+{ "items": [ ... ], "total": 42, "page": 1, "limit": 20 }
+```
 
 `POST /media/:id/permissions` gövdesi:
 
@@ -527,10 +534,12 @@ curl -X POST http://localhost:3000/media/upload \
 ### Listeleme
 
 ```bash
+# varsayılan: ilk sayfa, 20 kayıt
 curl http://localhost:3000/media/my \
   -H 'Authorization: Bearer <ACCESS_TOKEN>'
 
-curl 'http://localhost:3000/media/my/paginated?page=1&limit=20' \
+# sayfalama
+curl 'http://localhost:3000/media/my?page=2&limit=50' \
   -H 'Authorization: Bearer <ACCESS_TOKEN>'
 ```
 
@@ -581,6 +590,7 @@ curl -X DELETE http://localhost:3000/media/<MEDIA_ID> \
 | `sameSite` cookie | CSRF koruması |
 | `whitelist` + `forbidNonWhitelisted` | Mass assignment saldırısını kapıda keser |
 | Magic byte doğrulaması | MIME type ve uzantı taklit edilebilir, dosya içeriği edilemez |
+| İzin listesinin cevaptan gizlenmesi | İzinli kullanıcı, dosyanın başka kimlerle paylaşıldığını göremez; sosyal graf sızıntısı önlenir |
 | Sunucu tarafında dosya adı üretimi | Path traversal saldırısını imkânsız kılar |
 | Helmet + rate limit | Güvenlik başlıkları ve brute force koruması |
 | `.env` doğrulaması | Eksik yapılandırmayla çalışmak yerine açılışta durur |
@@ -607,7 +617,7 @@ curl -X DELETE http://localhost:3000/media/<MEDIA_ID> \
 ### Case dokümanına ek olarak yapılanlar
 
 - **`POST /auth/logout`** — refresh rotation'ın doğal tamamlayıcısı; cookie kullanıldığı için gerekli
-- **`GET /media/my/paginated`** — sınırsız listelemenin ölçek riskine karşı alternatif uç
+- **`GET /media/my` üzerinde sayfalama** — case dokümanı belirtmiyor; sınırsız liste ucu ölçekte hem sunucuyu hem istemciyi zorlar. Ayrı bir uç yerine aynı uca opsiyonel `page`/`limit` eklendi
 - **httpOnly cookie desteği** — Bearer başlığı ile birlikte, XSS koruması için
 - **Magic byte doğrulaması** — case yalnızca "jpeg kabul edilir" diyor, uzantı kontrolü yeterli sayılabilirdi
 - **Rate limiting ve Helmet** — brute force ve yaygın başlık tabanlı saldırılara karşı

@@ -60,15 +60,6 @@ export class MediaService {
     }
   }
 
-  /** Case'de tanimlandigi gibi tum kayitlari doner (sayfalama yok) */
-  findMyAll(ownerId: string): Promise<LeanMedia[]> {
-    return this.mediaModel
-      .find({ ownerId: new Types.ObjectId(ownerId) })
-      .sort({ createdAt: -1 })
-      .lean<LeanMedia[]>()
-      .exec();
-  }
-
   async findMyPaginated(ownerId: string, page: number, limit: number) {
     const filter = { ownerId: new Types.ObjectId(ownerId) };
 

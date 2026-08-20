@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class MediaResponseDto {
   @ApiProperty({ example: '66c1f2a7b3d4e5f6a7b8c9d0' })
@@ -16,8 +16,14 @@ export class MediaResponseDto {
   @ApiProperty({ example: '66c1f2a7b3d4e5f6a7b8c9d0' })
   ownerId: string;
 
-  @ApiProperty({ type: [String], example: [] })
-  allowedUserIds: string[];
+  @ApiPropertyOptional({
+    type: [String],
+    example: [],
+    description:
+      'Erisim izni verilmis kullanicilar. Yalnizca dosya sahibi ve admin icin doner; ' +
+      'izinli kullanicilar bu alani gormez.',
+  })
+  allowedUserIds?: string[];
 
   @ApiProperty()
   createdAt: Date;

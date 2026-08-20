@@ -45,6 +45,7 @@ import {
 } from './dto/permission-action.dto';
 import { MediaAccessGuard } from './guards/media-access.guard';
 import { OwnerOnly } from './guards/media-policy.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { LeanMedia, MediaService } from './media.service';
 import type { MediaDocument } from './schemas/media.schema';
 
@@ -85,32 +86,18 @@ export class MediaController {
     file: Express.Multer.File,
   ): Promise<MediaResponseDto> {
     const media = await this.mediaService.create(user.userId, file);
-    return this.toResponse(media);
+    return this.toResponse(media, user);
   }
 
   @Get('my')
   @ApiOperation({
-    summary: 'Kullanicinin yukledigi tum medyalari listeler',
+    summary: 'Kullanicinin yukledigi medyalari listeler',
     description:
-      'Case tanimina uygun sekilde sayfalama uygulanmaz. Cok sayida kayitta ' +
-      'GET /media/my/paginated tercih edilmelidir.',
-  })
-  @ApiOkResponse({ type: [MediaResponseDto] })
-  async findMy(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<MediaResponseDto[]> {
-    const items = await this.mediaService.findMyAll(user.userId);
-    return items.map((media) => this.toResponse(media));
-  }
-
-  @Get('my/paginated')
-  @ApiOperation({
-    summary: 'Kullanicinin medyalarini sayfali listeler',
-    description:
-      'Buyuk koleksiyonlar icin onerilen uc. Varsayilan 20, en fazla 100 kayit doner.',
+      'Sayfalama opsiyoneldir: page ve limit verilmezse ilk sayfa (20 kayit) doner. ' +
+      'Cevap her zaman ayni zarf yapisindadir; toplam kayit sayisi total alanindan okunur.',
   })
   @ApiOkResponse({ type: MediaListDto })
-  async findMyPaginated(
+  async findMy(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListMediaQueryDto,
   ): Promise<MediaListDto> {
@@ -121,7 +108,7 @@ export class MediaController {
     );
 
     return {
-      items: items.map((media) => this.toResponse(media)),
+      items: items.map((media) => this.toResponse(media, user)),
       total,
       page: query.page,
       limit: query.limit,
@@ -140,8 +127,9 @@ export class MediaController {
   findOne(
     @Param('id') _id: string,
     @MediaParam() media: MediaDocument,
+    @CurrentUser() user: AuthenticatedUser,
   ): MediaResponseDto {
-    return this.toResponse(media);
+    return this.toResponse(media, user);
   }
 
   @Get(':id/download')
@@ -229,14 +217,27 @@ export class MediaController {
     return this.toPermissions(updated);
   }
 
-  private toResponse(media: MediaDocument | LeanMedia): MediaResponseDto {
+  /**
+   * Izin listesi yalnizca dosya sahibine ve admine gosterilir.
+   * Aksi halde izinli bir kullanici dosyanin baska kimlerle paylasildigini gorurdu.
+   */
+  private toResponse(
+    media: MediaDocument | LeanMedia,
+    viewer: AuthenticatedUser,
+  ): MediaResponseDto {
+    const canSeePermissions =
+      viewer.role === UserRole.Admin ||
+      media.ownerId.toString() === viewer.userId;
+
     return {
       id: media._id.toString(),
       fileName: media.fileName,
       mimeType: media.mimeType,
       size: media.size,
       ownerId: media.ownerId.toString(),
-      allowedUserIds: media.allowedUserIds.map(String),
+      allowedUserIds: canSeePermissions
+        ? media.allowedUserIds.map(String)
+        : undefined,
       createdAt: media.createdAt,
     };
   }
