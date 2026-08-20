@@ -68,9 +68,11 @@ cp .env.example .env
 `.env` dosyasında `MONGO_URI` değerini doldurun. Veritabanı adını adresin içine yazmayı unutmayın:
 
 ```
-mongodb+srv://kullanici:parola@cluster0.xxxxx.mongodb.net/media_library?retryWrites=true&w=majority
-                                                          └─ veritabanı adı
+mongodb+srv://<KULLANICI>:<PAROLA>@<CLUSTER>.mongodb.net/media_library?retryWrites=true&w=majority
+                                                        └─ veritabanı adı: elle eklenmeli
 ```
+
+> Atlas'ın verdiği adreste veritabanı adı bulunmaz (`.../?retryWrites=...` şeklinde gelir). `media_library` kısmını eklemezseniz Mongoose varsayılan olarak `test` veritabanına yazar.
 
 JWT secret'larını üretin:
 
