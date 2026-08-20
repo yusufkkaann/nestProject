@@ -195,6 +195,8 @@ src/
 
 **Index'ler:** `users.email` (unique), `media.{ownerId: 1, createdAt: -1}` (compound — `GET /media/my` sorgusunun hem filtresini hem sıralamasını karşılar).
 
+`allowedUserIds` alanına bilinçli olarak index eklenmemiştir: yetki kontrolü, belge `_id` üzerinden çekildikten sonra bellekte yapılır (`canAccess`), bu alan hiçbir sorguda filtre olarak kullanılmaz. Kullanılmayan bir index yazma maliyeti ve depolama getirir. "Bana paylaşılan dosyalar" gibi `find({ allowedUserIds: userId })` sorgusu gerektiren bir uç eklenirse multikey index o zaman gerekli olur.
+
 `passwordHash`, `refreshTokenHash` ve `filePath` alanları şema seviyesindeki `toJSON` dönüşümüyle API cevaplarından temizlenir.
 
 ---

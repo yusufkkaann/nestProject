@@ -137,7 +137,7 @@ export class MediaService {
         : { $pull: { allowedUserIds: targetId } };
 
     const updated = await this.mediaModel
-      .findByIdAndUpdate(media._id, update, { new: true })
+      .findByIdAndUpdate(media._id, update, { returnDocument: 'after' })
       .exec();
 
     if (!updated) {
