@@ -2,6 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
@@ -11,6 +12,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.use(helmet());
+  app.use(cookieParser());
 
   // Tum DTO'lar otomatik dogrulanir; tanimsiz alanlar istekten temizlenir
   app.useGlobalPipes(
@@ -32,6 +34,7 @@ async function bootstrap() {
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
       'access-token',
     )
+    .addCookieAuth('access_token', { type: 'apiKey', in: 'cookie' }, 'cookie-auth')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
