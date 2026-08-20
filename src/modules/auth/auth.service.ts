@@ -12,10 +12,7 @@ import { TokensDto } from './dto/tokens.dto';
 import { hashPassword, verifyPassword } from './password';
 import { JwtPayload } from './types/jwt-payload.type';
 
-/**
- * Kullanici bulunamadiginda da dogrulama calistirmak icin kullanilir.
- * Boylece "e-posta kayitli mi?" bilgisi cevap suresinden sizmaz.
- */
+/** Kullanici yoksa da dogrulama calissin diye; cevap suresi e-postanin kayitli olup olmadigini ele vermesin */
 const DUMMY_HASH =
   '$argon2id$v=19$m=19456,p=1,t=2$OTVbnICcN7cKKhoCH1nL2A$kk9GmopTXImUDE87X/eTIg2MBQPjsF3LKLMWtGLwW1g';
 
@@ -36,7 +33,6 @@ export class AuthService {
     const passwordHash = await hashPassword(dto.password);
     const user = await this.users.create(dto.email, passwordHash);
 
-    // Kayit oturum acmaz; kullanici ayrica login olur
     return {
       message: 'Kayit basarili, giris yapabilirsiniz',
       user: { id: user._id.toString(), email: user.email },
@@ -50,7 +46,7 @@ export class AuthService {
   async login(dto: LoginDto): Promise<IssuedTokens> {
     const user = await this.users.findByEmailWithPassword(dto.email);
 
-    // Kullanici yoksa bile dogrulama yapilir (timing attack korumasi)
+    // Kullanici yoksa bile dogrulama yapilir (timing attack)
     const passwordMatches = await verifyPassword(
       user?.passwordHash ?? DUMMY_HASH,
       dto.password,
@@ -63,10 +59,7 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  /**
-   * Refresh token rotation:
-   * gecerli token yeni bir cift ile degistirilir, eskisi aninda gecersizlesir.
-   */
+  /** Her cagri yeni bir cift uretir, eski token aninda gecersizlesir */
   async refresh(refreshToken: string): Promise<IssuedTokens> {
     const payload = await this.verifyRefreshToken(refreshToken);
 
@@ -76,7 +69,7 @@ export class AuthService {
     }
 
     if (!this.hashMatches(refreshToken, user.refreshTokenHash)) {
-      // Kullanilmis/eski bir token geldi -> token calinmis olabilir, tum oturumu kapat
+      // Kullanilmis token geldi: calinmis olabilir, oturumu tamamen kapat
       await this.users.setRefreshTokenHash(user._id, null);
       throw new UnauthorizedException(
         'Refresh token gecersiz, oturum sonlandirildi',
@@ -133,7 +126,7 @@ export class AuthService {
     return this.jwt.decode<{ exp: number }>(token).exp;
   }
 
-  /** Refresh token yuksek entropili oldugu icin parola hash'i yerine SHA-256 yeterli ve cok daha hizli */
+  /** Token zaten yuksek entropili, Argon2 gereksiz yavaslama olurdu */
   private sha256(value: string): string {
     return createHash('sha256').update(value).digest('hex');
   }

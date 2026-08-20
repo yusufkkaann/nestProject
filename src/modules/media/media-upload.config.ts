@@ -8,15 +8,15 @@ import { MulterModuleOptions } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg'];
-// Ayni formatin iki uzantisi: JPEG standardi, .jpg 8.3 dosya adi sinirindan kalma kisaltma
+// Ayni formatin iki uzantisi, ikisinin de mime type'i image/jpeg
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg'];
 
-/** Dosya adi sunucuda uretilir: kullanici girdisi dosya sistemine hic gecmez (path traversal) */
+/** Dosya adini sunucu uretiyor; kullanici girdisi dosya sistemine hic gecmiyor */
 const uniqueFileName: MulterCallback<string> = (_req, file, callback) => {
   callback(null, `${randomUUID()}${extname(file.originalname).toLowerCase()}`);
 };
 
-/** Ilk savunma: bildirilen tip ve uzanti. Icerigin gercekten JPEG oldugu MediaService'te dogrulanir */
+/** Ilk eleme: bildirilen tip ve uzanti. Icerik kontrolu MediaService'te */
 const jpegOnlyFilter: MulterCallback<boolean> = (_req, file, callback) => {
   const mimeOk = ALLOWED_MIME_TYPES.includes(file.mimetype);
   const extOk = ALLOWED_EXTENSIONS.includes(
@@ -38,10 +38,7 @@ type MulterCallback<T> = (
   callback: (error: Error | null, result: T) => void,
 ) => void;
 
-/**
- * Yukleme politikasi tek noktada: hedef klasor, boyut siniri ve tip kontrolu.
- * Async cunku hedef klasor uygulama ayaga kalkarken olusturulur.
- */
+/** Async cunku hedef klasor acilista olusturuluyor */
 export async function createMulterOptions(
   config: ConfigService,
 ): Promise<MulterModuleOptions> {

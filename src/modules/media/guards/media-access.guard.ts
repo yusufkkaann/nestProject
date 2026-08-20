@@ -32,12 +32,11 @@ export class MediaAccessGuard implements CanActivate {
 
     const id = request.params.id as string;
 
-    // Guard, Pipe'lardan once calisir; format dogrulamasi burada yapilmali
+    // Guard, Pipe'lardan once calistigi icin format kontrolu burada
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Gecersiz id formati');
     }
 
-    // Kayit yoksa 404, varsa yetki kontrolu yapilir
     const media = await this.mediaService.findByIdOrFail(id);
 
     const ownerOnly = this.reflector.getAllAndOverride<boolean>(
@@ -49,7 +48,7 @@ export class MediaAccessGuard implements CanActivate {
       throw new ForbiddenException('Bu dosyaya erisim yetkiniz yok');
     }
 
-    // Controller ayni kaydi tekrar sorgulamasin diye istege ilistirilir
+    // Controller tekrar sorgulamasin
     request.media = media;
     return true;
   }
@@ -59,7 +58,7 @@ export class MediaAccessGuard implements CanActivate {
     media: MediaDocument,
     user: AuthenticatedUser,
   ): boolean {
-    // Admin tum medya uclarinda yetkilidir; kaynak sahipligi aranmaz
+    // Admin icin kaynak sahipligi aranmiyor
     if (user.role === UserRole.Admin) {
       return true;
     }

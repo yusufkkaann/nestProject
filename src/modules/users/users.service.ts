@@ -6,7 +6,7 @@ import { User, UserDocument } from './schemas/user.schema';
 
 const MONGO_DUPLICATE_KEY = 11000;
 
-/** Mongo surucusunun firlattigi hatalarda code alani her zaman bulunmaz */
+/** Mongo hatalarinda code alani her zaman bulunmuyor */
 function isDuplicateKeyError(error: unknown): boolean {
   return (
     typeof error === 'object' &&
@@ -26,7 +26,7 @@ export class UsersService {
     try {
       return await this.userModel.create({ email, passwordHash });
     } catch (error: unknown) {
-      // Unique index ihlali: ayni anda iki kayit denemesinde de dogru sonucu verir
+      // Onceden findOne yapmak yerine unique index'in hatasini yakaliyoruz
       if (isDuplicateKeyError(error)) {
         throw new ConflictException('Bu e-posta adresi zaten kayitli');
       }
@@ -38,7 +38,7 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
-  /** Login icin: passwordHash varsayilan olarak gelmedigi icin acikca isteniyor */
+  /** passwordHash select: false oldugu icin acikca isteniyor */
   findByEmailWithPassword(email: string): Promise<UserDocument | null> {
     return this.userModel
       .findOne({ email: email.toLowerCase() })
@@ -46,7 +46,7 @@ export class UsersService {
       .exec();
   }
 
-  /** Refresh icin: saklanan token hash'i acikca isteniyor */
+  /** refreshTokenHash select: false oldugu icin acikca isteniyor */
   findByIdWithRefreshToken(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).select('+refreshTokenHash').exec();
   }

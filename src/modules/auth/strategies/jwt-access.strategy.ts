@@ -16,7 +16,7 @@ function fromCookie(req: Request): string | null {
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(config: ConfigService) {
     super({
-      // Once Authorization basligi (cURL/Postman/mobil), sonra cookie (tarayici)
+      // Once Authorization basligi, yoksa cookie
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         fromCookie,
@@ -26,11 +26,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  /**
-   * Imza ve sure dogrulandiktan sonra calisir.
-   * Donen deger request.user icine yazilir.
-   * Access token kisa omurlu oldugu icin her istekte DB'ye gidilmez.
-   */
+  /** Donen deger request.user'a yazilir. Token kisa omurlu oldugu icin DB'ye gidilmiyor. */
   validate(payload: JwtPayload): AuthenticatedUser {
     return { userId: payload.sub, email: payload.email, role: payload.role };
   }

@@ -1,11 +1,8 @@
 /**
  * Ilk admin kullanicisini olusturur veya mevcut bir kullaniciyi admin yapar.
+ * Rol atamasi icin API ucu yok; ayricalik yukseltme yuzeyini acmamak icin.
  *
- * Kullanim:
  *   npm run seed:admin -- admin@example.com Passw0rd1
- *
- * Rol atamasi bilincli olarak REST API disinda tutulmustur; ayricalik yukseltme
- * icin bir uc bulunmamasi saldiri yuzeyini daraltir.
  */
 import { connect, connection } from 'mongoose';
 

@@ -14,7 +14,7 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
 
-  // Tum DTO'lar otomatik dogrulanir; tanimsiz alanlar istekten temizlenir
+  // forbidNonWhitelisted: DTO'da olmayan alan gelirse istek reddedilir
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

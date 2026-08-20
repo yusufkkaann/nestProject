@@ -13,14 +13,14 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;
 
-  // select: false -> normal sorgularda DONMEZ, sadece acikca istenirse gelir
+  // Normal sorgularda donmez, .select('+passwordHash') ile istenir
   @Prop({ required: true, select: false })
   passwordHash: string;
 
   @Prop({ type: String, enum: UserRole, default: UserRole.User })
   role: UserRole;
 
-  // Aktif refresh token'in hash'i. null ise kullanici cikis yapmis demektir.
+  // null ise aktif oturum yok
   @Prop({ type: String, select: false, default: null })
   refreshTokenHash: string | null;
 

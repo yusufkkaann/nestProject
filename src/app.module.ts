@@ -14,7 +14,6 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    // .env global olarak okunur ve ayaga kalkmadan once dogrulanir
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -22,19 +21,18 @@ import { UsersModule } from './modules/users/users.module';
       validate: validateEnv,
     }),
 
-    // Mongo baglantisi config uzerinden async kurulur
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: createMongooseOptions,
     }),
 
-    // Brute-force korumasi: IP basina 60 saniyede 100 istek
+    // IP basina dakikada 100 istek; auth uclarinda ayrica @Throttle var
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 
-    HealthModule, // health modulu eklendi
-    AuthModule, // register / login / refresh
-    UsersModule, // /users/me
-    MediaModule, // yukleme, indirme, yetkilendirme
+    HealthModule,
+    AuthModule,
+    UsersModule,
+    MediaModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -49,10 +49,7 @@ class EnvironmentVariables {
   NODE_ENV: NodeEnv = NodeEnv.Development;
 }
 
-/**
- * Uygulama ayaga kalkarken .env dogrulanir.
- * Eksik/hatali degisken varsa surec baslamadan hata verir (fail fast).
- */
+/** Eksik veya hatali degisken varsa surec hic baslamasin */
 export function validateEnv(
   config: Record<string, unknown>,
 ): EnvironmentVariables {

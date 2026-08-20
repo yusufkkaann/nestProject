@@ -3,12 +3,7 @@ import { CookieOptions, Response } from 'express';
 export const ACCESS_COOKIE = 'access_token';
 export const REFRESH_COOKIE = 'refresh_token';
 
-/**
- * httpOnly  : JavaScript okuyamaz -> XSS ile token calinamaz
- * sameSite  : tarayici cookie'yi capraz siteden gonderemez -> CSRF korumasi
- * secure    : sadece HTTPS uzerinden gonderilir (production)
- * path      : refresh token yalnizca /auth altina gonderilir, gereksiz yere agda dolasmaz
- */
+/** httpOnly XSS'e, sameSite CSRF'e karsi. secure yalnizca production'da. */
 function baseOptions(isProduction: boolean): CookieOptions {
   return {
     httpOnly: true,
@@ -17,7 +12,7 @@ function baseOptions(isProduction: boolean): CookieOptions {
   };
 }
 
-/** Token'in kendi son kullanma tarihinden cookie omru hesaplanir; ikisi ayni anda olur */
+/** Cookie omru token'in exp degerinden gelir, ikisi ayni anda sona erer */
 function maxAgeFromToken(expiresAtSeconds: number): number {
   return Math.max(expiresAtSeconds * 1000 - Date.now(), 0);
 }

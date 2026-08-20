@@ -217,10 +217,7 @@ export class MediaController {
     return this.toPermissions(updated);
   }
 
-  /**
-   * Izin listesi yalnizca dosya sahibine ve admine gosterilir.
-   * Aksi halde izinli bir kullanici dosyanin baska kimlerle paylasildigini gorurdu.
-   */
+  /** Izin listesi yalnizca sahibe ve admine gosterilir */
   private toResponse(
     media: MediaDocument | LeanMedia,
     viewer: AuthenticatedUser,

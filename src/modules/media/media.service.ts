@@ -15,10 +15,7 @@ import { UsersService } from '../users/users.service';
 import { PermissionAction } from './dto/permission-action.dto';
 import { Media, MediaDocument } from './schemas/media.schema';
 
-/**
- * lean() Mongoose dokuman sarmalamasini atlar: metotsuz, duz JS objesi doner.
- * Salt-okunur listelemede bellek ve CPU maliyetini belirgin sekilde dusurur.
- */
+/** lean() sonucu: metotsuz duz obje. Salt okunur listelemede daha ucuz. */
 export type LeanMedia = Media & { _id: Types.ObjectId };
 
 /** JPEG dosyalari her zaman FF D8 FF ile baslar (SOI marker) */
@@ -37,7 +34,7 @@ export class MediaService {
     ownerId: string,
     file: Express.Multer.File,
   ): Promise<MediaDocument> {
-    // Dosya diske yazildi; icerigi gercekten JPEG mi diye dogrulanir
+    // Uzanti ve mime type taklit edilebilir, icerige bakiyoruz
     if (!(await this.isJpeg(file.path))) {
       await this.deleteFile(file.path);
       throw new UnprocessableEntityException(
@@ -54,7 +51,7 @@ export class MediaService {
         size: file.size,
       });
     } catch (error) {
-      // DB kaydi basarisizsa diskte sahipsiz dosya birakilmaz
+      // Kayit olusmadiysa diskte sahipsiz dosya kalmasin
       await this.deleteFile(file.path);
       throw error;
     }
@@ -63,7 +60,7 @@ export class MediaService {
   async findMyPaginated(ownerId: string, page: number, limit: number) {
     const filter = { ownerId: new Types.ObjectId(ownerId) };
 
-    // Sayfa ve toplam ayni anda sorgulanir; iki gidis-donus yerine tek bekleme
+    // Iki sorgu paralel; sirayla calistirmanin anlami yok
     const [items, total] = await Promise.all([
       this.mediaModel
         .find(filter)
@@ -121,7 +118,7 @@ export class MediaService {
 
     const targetId = new Types.ObjectId(userId);
 
-    // $addToSet tekrar eklemeyi engeller; kontrol + yazma yarisina yer birakmaz
+    // Atomik operatorler: oku-degistir-yaz yarisi olusmuyor
     const update =
       action === PermissionAction.Add
         ? { $addToSet: { allowedUserIds: targetId } }
@@ -137,7 +134,7 @@ export class MediaService {
     return updated;
   }
 
-  /** Uzanti ve istemcinin bildirdigi mime type taklit edilebilir; dosyanin ilk baytlari edilemez */
+  /** JPEG dosyalari FF D8 FF ile baslar; sadece ilk uc bayt okunuyor */
   private async isJpeg(filePath: string): Promise<boolean> {
     const handle = await open(filePath, 'r');
     try {
@@ -153,7 +150,7 @@ export class MediaService {
     try {
       await unlink(resolve(filePath));
     } catch (error) {
-      // Dosya zaten yoksa istek basarisiz sayilmaz, sadece kaydedilir
+      // Dosya zaten yoksa istek basarisiz sayilmasin
       this.logger.warn(
         `Dosya silinemedi: ${filePath} (${(error as Error).message})`,
       );

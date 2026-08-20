@@ -13,11 +13,11 @@ export class Media {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   ownerId: Types.ObjectId;
 
-  /** Kullanicinin yukledigi orijinal dosya adi (indirme sirasinda geri verilir) */
+  /** Kullanicinin yukledigi ad; indirmede Content-Disposition ile geri veriliyor */
   @Prop({ required: true })
   fileName: string;
 
-  /** Diskteki yol. Dosya adi rastgele uretilir; kullanici girdisi dosya sistemine hic dokunmaz */
+  /** Diskteki yol; dosya adi sunucuda uretiliyor */
   @Prop({ required: true })
   filePath: string;
 
@@ -35,7 +35,7 @@ export class Media {
 
 export const MediaSchema = SchemaFactory.createForClass(Media);
 
-// GET /media/my -> sahibe gore filtreleyip tarihe gore siralar; tek index ikisini de karsilar
+// /media/my hem ownerId'ye gore filtreliyor hem createdAt'e gore siraliyor
 MediaSchema.index({ ownerId: 1, createdAt: -1 });
 
 MediaSchema.set('toJSON', {
@@ -43,7 +43,7 @@ MediaSchema.set('toJSON', {
     ret.id = String(ret._id);
     delete ret._id;
     delete ret.__v;
-    delete ret.filePath; // fiziksel yol disariya sizmamalidir
+    delete ret.filePath;
     return ret;
   },
 });
