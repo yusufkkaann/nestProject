@@ -136,6 +136,8 @@ Access token 15 dakika, refresh token 7 gün geçerli. İkisi ayrı secret'la im
 
 Token'lar hem cevap gövdesinde dönüyor hem httpOnly cookie olarak set ediliyor. Guard önce `Authorization: Bearer` başlığına bakıyor, bulamazsa cookie'ye. Böylece cURL ve Postman gövdedeki token'ı, tarayıcı istemcileri cookie'yi kullanabiliyor.
 
+Doğrulamayı Passport ile değil, `JwtService` kullanan kendi `JwtAuthGuard`'ımla yapıyorum. Servis yalnızca kendi ürettiği token'ı kabul ediyor, üçüncü parti bir kimlik sağlayıcı yok; bu durumda Passport'un getirdiği üç paket ve strateji katmanı karşılığında yalnızca hazır bir token çıkarıcı veriyordu. Guard süresi dolmuş token ile geçersiz token'ı ayrı mesajlarla döndürüyor, böylece istemci refresh mı yoksa yeniden giriş mi gerektiğini biliyor. Google veya SAML gibi bir sağlayıcı eklenecek olsa `@nestjs/passport` bu noktada değer kazanırdı.
+
 Cookie tercihi XSS içindi: `httpOnly` olduğu için JavaScript token'ı okuyamıyor, `localStorage`'daki gibi çalınamıyor. Bunun karşılığında CSRF yüzeyi açılıyor, onu da `sameSite` ile kapattım (production'da `strict`, geliştirmede `lax`). `refresh_token` cookie'sine `path=/auth` verdim, diğer isteklerde ağda dolaşmıyor.
 
 Cookie ömrünü sabit yazmak yerine token'ın kendi `exp` değerinden hesaplıyorum. `.env`'deki TTL değişse bile cookie ile token birbirinden ayrışmıyor.
