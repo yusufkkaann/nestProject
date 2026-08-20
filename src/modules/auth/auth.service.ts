@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
 import { createHash, timingSafeEqual } from 'node:crypto';
 
 import { UsersService } from '../users/users.service';
@@ -10,18 +9,8 @@ import { RegisterDto } from './dto/register.dto';
 import { RegisterResponseDto } from './dto/register-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { TokensDto } from './dto/tokens.dto';
+import { hashPassword, verifyPassword } from './password';
 import { JwtPayload } from './types/jwt-payload.type';
-
-/**
- * OWASP onerisi (Argon2id): m=19MiB, t=2, p=1.
- * Bellek maliyeti sayesinde GPU/ASIC ile paralel deneme ekonomik olmaktan cikar.
- */
-const ARGON2_OPTIONS = {
-  type: argon2.argon2id,
-  memoryCost: 19456,
-  timeCost: 2,
-  parallelism: 1,
-} satisfies argon2.HashOptions;
 
 /**
  * Kullanici bulunamadiginda da dogrulama calistirmak icin kullanilir.
@@ -44,7 +33,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<RegisterResponseDto> {
-    const passwordHash = await argon2.hash(dto.password, ARGON2_OPTIONS);
+    const passwordHash = await hashPassword(dto.password);
     const user = await this.users.create(dto.email, passwordHash);
 
     // Kayit oturum acmaz; kullanici ayrica login olur
@@ -62,7 +51,7 @@ export class AuthService {
     const user = await this.users.findByEmailWithPassword(dto.email);
 
     // Kullanici yoksa bile dogrulama yapilir (timing attack korumasi)
-    const passwordMatches = await this.verifyPassword(
+    const passwordMatches = await verifyPassword(
       user?.passwordHash ?? DUMMY_HASH,
       dto.password,
     );
@@ -142,15 +131,6 @@ export class AuthService {
   /** Token'in kendi exp claim'i okunur -> cookie omru ile token omru asla ayrisamaz */
   private expiresAt(token: string): number {
     return this.jwt.decode<{ exp: number }>(token).exp;
-  }
-
-  /** Bozuk hash formatinda argon2 exception atar; bu durum da basarisiz dogrulama sayilir */
-  private async verifyPassword(hash: string, plain: string): Promise<boolean> {
-    try {
-      return await argon2.verify(hash, plain);
-    } catch {
-      return false;
-    }
   }
 
   /** Refresh token yuksek entropili oldugu icin parola hash'i yerine SHA-256 yeterli ve cok daha hizli */

@@ -97,7 +97,15 @@ npm run start:prod   # derlenmiş kodu çalıştır
 
 `uploads/` klasörü uygulama açılışında otomatik oluşturulur, elle oluşturmanıza gerek yoktur.
 
-### 5. Swagger üzerinden hızlı deneme
+### 5. (İsteğe bağlı) Admin kullanıcı
+
+```bash
+npm run seed:admin -- admin@example.com Passw0rd1
+```
+
+Admin rolünün yetkileri için [Admin rolü](#admin-rolü) bölümüne bakın.
+
+### 6. Swagger üzerinden hızlı deneme
 
 1. `POST /auth/register` → yeni kullanıcı oluşturun
 2. `POST /auth/login` → dönen `accessToken` değerini kopyalayın
@@ -135,12 +143,15 @@ src/
 ├── common/
 │   └── decorators/
 │       └── current-user.decorator.ts    request.user → controller parametresi
+├── scripts/
+│   └── seed-admin.ts             ilk admin ataması (REST dışı)
 └── modules/
     ├── health/                   GET /health
     ├── auth/                     register / login / refresh / logout
     │   ├── strategies/           Passport JWT stratejisi
     │   ├── guards/               JwtAuthGuard
     │   ├── auth.cookies.ts       httpOnly cookie yönetimi
+    │   ├── password.ts           Argon2id hash/doğrulama yardımcıları
     │   └── dto/
     ├── users/                    GET /users/me, User şeması
     └── media/                    yükleme, indirme, yetkilendirme
@@ -289,11 +300,23 @@ private isAllowed(ownerOnly, media, user): boolean {
 
 Rol bilgisi JWT payload'ında taşındığı için bu kontrol ek veritabanı sorgusu gerektirmez.
 
-> **Admin nasıl oluşturulur?** Kayıt sırasında rol gönderilemez (mass assignment koruması `role` alanını reddeder). Admin ataması veritabanı üzerinden yapılır:
-> ```js
-> db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
-> ```
-> Production'da bunun yerine bir seed script'i veya yalnızca mevcut adminlerin çağırabildiği bir yönetim ucu bulunmalıdır.
+### Admin nasıl oluşturulur?
+
+Rol ataması **bilinçli olarak REST API dışında** tutulmuştur; bunun için bir seed komutu vardır:
+
+```bash
+# Yeni bir admin kullanıcı oluşturur
+npm run seed:admin -- admin@example.com Passw0rd1
+
+# Mevcut bir kullanıcıyı admin yapar (parola gerekmez)
+npm run seed:admin -- mevcut@example.com
+```
+
+Komut idempotenttir: kullanıcı zaten admin ise değişiklik yapmaz. Parola, uygulamanın kullandığı Argon2id yardımcılarıyla hash'lenir (`src/modules/auth/password.ts`) — seed ile oluşturulan kullanıcı doğrudan `POST /auth/login` ile giriş yapabilir.
+
+**Neden REST ucu yok?** Rol yükseltme, bir sistemdeki en kritik işlemdir. Bunun için bir uç bulundurmak, o ucun yetkilendirmesindeki tek bir hatanın tüm erişim modelini çökertmesi anlamına gelir. Ayrıca `register` isteğinde `role` alanı gönderilemez — global `ValidationPipe`'ın `forbidNonWhitelisted` ayarı mass assignment yoluyla kendini admin yapma girişimini 400 ile reddeder.
+
+İlk admin altyapı seviyesinde (deploy sırasında çalıştırılan seed komutu) atanır; uygulama çalışırken ayrıcalık yükseltmenin bir yolu yoktur. Çok sayıda yöneticinin bulunduğu büyük bir sistemde bunun yerine, yalnızca mevcut adminlerin çağırabildiği ve her çağrısı denetim kaydına yazılan bir yönetim ucu tercih edilirdi.
 
 Guard sırasıyla şunları yapar:
 
@@ -557,6 +580,7 @@ curl -X DELETE http://localhost:3000/media/<MEDIA_ID> \
 | Sunucu tarafında dosya adı üretimi | Path traversal saldırısını imkânsız kılar |
 | Helmet + rate limit | Güvenlik başlıkları ve brute force koruması |
 | `.env` doğrulaması | Eksik yapılandırmayla çalışmak yerine açılışta durur |
+| Rol atamasının REST dışında olması | Ayrıcalık yükseltme için bir uç bulunmaması saldırı yüzeyini daraltır; ilk admin deploy sırasında seed ile atanır |
 
 ### Performans
 
