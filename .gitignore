@@ -1,0 +1,39 @@
+# compiled output
+/dist
+/node_modules
+/build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs
+/.idea
+/.project
+/.classpath
+/.c9/
+*.launch
+.settings/
+*.sublime-workspace
+/.vscode/*
+!/.vscode/extensions.json
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Uploaded media files (fiziksel dosyalar repoya girmez)
+/uploads/*
+!/uploads/.gitkeep
